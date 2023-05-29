@@ -1,0 +1,75 @@
+import libs = libthrift%lib{thrift}
+import! [metadata] thrift = thrift%exe{thrift}
+
+define [see_through] thrift_cxx: group
+define thrift: file
+thrift{*}: extension = thrift
+
+exe{hello-thrift}: {hxx cxx}{** -gen-cpp/*} thrift_cxx{ThriftTest} $libs testscript
+
+thrift_cxx{ThriftTest}: thrift{ThriftTest}
+
+cxx.poptions =+ "-I$out_root" "-I$src_root" "-I$out_base" "-I$src_base"
+
+h{*}: extension = hh # @@ TMP hack
+
+# Note that the Thrift's way is to place the generated files into the gen-cpp/
+# subdirectory of the output directory. Seeing that there is no predictability
+# in the generated file names (no, they don't alwasy start with the input file
+# base), this is probably for the best. So we roll with that.
+#
+thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} fsdir{gen-cpp} $thrift
+{{
+   s = $path($<[0])                        # Source file.
+   t = $out_base/$name($>[0]).thrift_cxx.t # Temp dir (based on group name).
+   d = $t/$name($<[0]).d                   # Dep file (target list).
+
+   options = --nowarn --gen cpp:no_skeleton
+
+   # Thrift doesn't provide any way to list the would-be-generated files so
+   # the best we can do is to generate them, get their list, and throw them
+   # away. Also note that there is likewise no way to list included files, so
+   # one has to track this manually.
+   #
+   # Here is the line-by-line description of what's going on:
+   #
+   # - depdb dyndep --dyn-target --format lines --file $d
+   #
+   #   The dynamic dependency extraction builtin call. The --dyn-target option
+   #   instructs it to extract dynamic targets. The --format=lines option
+   #   tells it that the targets will be listed one per line.  The --file
+   #   option tells it to read the dependency information (the list of
+   #   targets) from the $d file that will be produced by the rest of
+   #   the lines.
+   #
+   # - mkdir -p $t
+   #
+   #   Create the temporary directory. At the end of the command line, it will
+   #   be automatically cleaned up.
+   #
+   # - $thrift -o $t $options $s &$t/gen-cpp/***
+   #
+   #   Generate the files placing them into gen-cpp subdirectory of the
+   #   temporary directory $t. The &$t/gen-cpp/*** part is the cleanup
+   #   that will $t/gen-cpp remove recursively.
+   #
+   # - find $t/gen-cpp -type f >$d
+   #
+   #   The find builtin lists all the files in the $t/gen-cpp directory
+   #   and writes this list to $d.
+   #
+   # - sed -i -e "s%[/\\\\]$path.leaf($t)%%g"
+   #
+   #   The list of files produced by the find builtin will contain the
+   #   temporary directory while the actual files that will be generated
+   #   by the recipe body will be in out_base. So this sed script removed
+   #   the temporary directory component from each path in $d.
+   #
+   depdb dyndep --dyn-target --format lines --file $d -- \
+     mkdir -p $t                                      && \
+     $thrift -o $t $options $s &$t/gen-cpp/***        && \
+     find $t/gen-cpp -type f >$d                      && \
+     sed -i -e "s%[/\\\\]$path.leaf($t)%%g" $d
+
+   $thrift -o $out_base $options $s
+}}

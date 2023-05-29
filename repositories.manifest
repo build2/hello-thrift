@@ -1,0 +1,11 @@
+: 1
+summary: hello-thrift project repository
+
+:
+role: prerequisite
+location: https://queue.stage.build2.org/1/alpha
+#trust: ...
+
+#:
+#role: prerequisite
+#location: https://git.build2.org/hello/libhello.git

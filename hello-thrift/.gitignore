@@ -1,0 +1,5 @@
+hello-thrift
+
+# Testscript output directory (can be symlink).
+#
+test-hello-thrift

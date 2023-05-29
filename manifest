@@ -1,0 +1,15 @@
+: 1
+name: hello-thrift
+version: 0.1.0-a.0.z
+language: c++
+summary: An example that shows how to compile thrift files
+license: MIT
+description-file: README.md
+url: https://github.org/build2/hello-thrift
+email: users@build2.org
+#build-error-email: boris@codesynthesis.com
+depends: * build2 >= 0.16.0-
+depends: * bpkg >= 0.16.0-
+
+depends: * thrift ^0.17.0
+depends:   libthrift ^0.17.0
