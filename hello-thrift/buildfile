@@ -93,4 +93,13 @@ thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} $thrift
      echo $path.representation([dir_path] $o/gen-cpp) >>$d
 
    $thrift -o $o $thrift_options $s
+
+   # Thrift is trying to be clever and avoid modifying the existing generated
+   # files if nothing changes. This messes up with our mtime-based change
+   # tracking so we fix it by making sure each generated file is older than
+   # the source.
+   #
+   for i: $integer_sequence(1, $size($>))
+     touch --after $s $path($>[$i])
+   end
 }}
