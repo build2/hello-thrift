@@ -11,8 +11,6 @@ thrift_cxx{ThriftTest}: thrift{ThriftTest}
 
 cxx.poptions =+ "-I$out_root" "-I$src_root" "-I$out_base" "-I$src_base"
 
-h{*}: extension = hh # @@ TMP hack
-
 # Note that the Thrift's way is to place the generated files into the gen-cpp/
 # subdirectory of the output directory. Seeing that there is no predictability
 # in the generated file names (no, they don't alwasy start with the input file
@@ -24,7 +22,27 @@ thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} fsdir{gen-cpp} $thrift
    t = $out_base/$name($>[0]).thrift_cxx.t # Temp dir (based on group name).
    d = $t/$name($<[0]).d                   # Dep file (target list).
 
-   options = --nowarn --gen cpp:no_skeleton
+   thrift_options = --nowarn --gen cpp:no_skeleton
+
+   # Describe the dynamic targets for better diagnostics, for example:
+   #
+   # error: mapping of generated thrift target path SecondService.h to target type is ambiguous
+   #
+   # Instead of:
+   #
+   # error: mapping of file target path SecondService.h to target type is ambiguous
+   #
+   dyndep_options = --target-what 'generated thrift'
+
+   # Explicitly map generated files to hxx{}/cxx{} target types. This serves
+   # two purposes: It resolves the ambiguity between h{} and hxx{} for headers
+   # (since they both use the .h extension). It also makes sure the generated
+   # files are mapped to these targets even if the project uses extensions
+   # other than .h/.cpp (it doesn't look like there is a way to customize
+   # the extensions in Thrift).
+   #
+   dyndep_options += --target-extension-type h=hxx
+   dyndep_options += --target-extension-type cpp=cxx
 
    # Thrift doesn't provide any way to list the would-be-generated files so
    # the best we can do is to generate them, get their list, and throw them
@@ -33,7 +51,7 @@ thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} fsdir{gen-cpp} $thrift
    #
    # Here is the line-by-line description of what's going on:
    #
-   # - depdb dyndep --dyn-target --format lines --file $d
+   # - depdb dyndep --dyn-target $dyndep_options --format lines --file $d
    #
    #   The dynamic dependency extraction builtin call. The --dyn-target option
    #   instructs it to extract dynamic targets. The --format=lines option
@@ -47,7 +65,7 @@ thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} fsdir{gen-cpp} $thrift
    #   Create the temporary directory. At the end of the command line, it will
    #   be automatically cleaned up.
    #
-   # - $thrift -o $t $options $s &$t/gen-cpp/***
+   # - $thrift -o $t $thrift_options $s &$t/gen-cpp/***
    #
    #   Generate the files placing them into gen-cpp subdirectory of the
    #   temporary directory $t. The &$t/gen-cpp/*** part is the cleanup
@@ -65,11 +83,11 @@ thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} fsdir{gen-cpp} $thrift
    #   by the recipe body will be in out_base. So this sed script removed
    #   the temporary directory component from each path in $d.
    #
-   depdb dyndep --dyn-target --format lines --file $d -- \
-     mkdir -p $t                                      && \
-     $thrift -o $t $options $s &$t/gen-cpp/***        && \
-     find $t/gen-cpp -type f >$d                      && \
+   depdb dyndep --dyn-target $dyndep_options --format lines --file $d -- \
+     mkdir -p $t                                                      && \
+     $thrift -o $t $thrift_options $s &$t/gen-cpp/***                 && \
+     find $t/gen-cpp -type f >$d                                      && \
      sed -i -e "s%[/\\\\]$path.leaf($t)%%g" $d
 
-   $thrift -o $out_base $options $s
+   $thrift -o $out_base $thrift_options $s
 }}
