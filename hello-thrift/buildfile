@@ -16,7 +16,7 @@ cxx.poptions =+ "-I$out_root" "-I$src_root" "-I$out_base" "-I$src_base"
 # in the generated file names (no, they don't alwasy start with the input file
 # base), this is probably for the best. So we roll with that.
 #
-thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} fsdir{gen-cpp} $thrift
+thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} $thrift
 {{
    s = $path($<[0])                        # Source file.
    t = $out_base/$name($>[0]).thrift_cxx.t # Temp dir (based on group name).
@@ -87,7 +87,9 @@ thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} fsdir{gen-cpp} $thrift
      mkdir -p $t                                                      && \
      $thrift -o $t $thrift_options $s &$t/gen-cpp/***                 && \
      find $t/gen-cpp -type f >$d                                      && \
-     sed -i -e "s%[/\\\\]$path.leaf($t)%%g" $d
+     sed -i -e "s%[/\\\\]$path.leaf($t)%%g" $d                        && \
+     echo '' >>$d                                                     && \
+     echo $path.representation([dir_path] $out_base/gen-cpp) >>$d
 
    $thrift -o $out_base $thrift_options $s
 }}
