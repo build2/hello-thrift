@@ -16,7 +16,7 @@ cxx.poptions =+ "-I$out_root" "-I$src_root" "-I$out_base" "-I$src_base"
 # in the generated file names (no, they don't alwasy start with the input file
 # base), this is probably for the best. So we roll with that.
 #
-thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} $thrift
+[rule_name=thrift_compile_cxx] thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} $thrift
 {{
    o = $directory($>[0])             # Target output directory.
    s = $path($<[0])                  # Source file.
