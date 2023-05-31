@@ -5,9 +5,12 @@ define [see_through] thrift_cxx: group
 define thrift: file
 thrift{*}: extension = thrift
 
-exe{hello-thrift}: {hxx cxx}{** -gen-cpp/*} thrift_cxx{ThriftTest} $libs testscript
+exe{hello-thrift}: {hxx cxx}{** -gen-cpp/*} \
+                   thrift_cxx{ThriftTest EnumTest} \
+                   $libs testscript
 
 thrift_cxx{ThriftTest}: thrift{ThriftTest}
+thrift_cxx{EnumTest}: thrift{EnumTest}
 
 cxx.poptions =+ "-I$out_root" "-I$src_root" "-I$out_base" "-I$src_base"
 
@@ -15,6 +18,10 @@ cxx.poptions =+ "-I$out_root" "-I$src_root" "-I$out_base" "-I$src_base"
 # subdirectory of the output directory. Seeing that there is no predictability
 # in the generated file names (no, they don't alwasy start with the input file
 # base), this is probably for the best. So we roll with that.
+#
+# Note also that this rule has no problem compiling multiple .thrift files
+# into the same gen-cpp/ subdirectory provided they don't clobber each other's
+# generated files.
 #
 [rule_name=thrift_compile_cxx] thrift_cxx{~'/(.+)/'}: thrift{~'/\1/'} $thrift
 {{
