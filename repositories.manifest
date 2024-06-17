@@ -3,7 +3,7 @@ summary: hello-thrift project repository
 
 :
 role: prerequisite
-location: https://queue.stage.build2.org/1/alpha
+location: https://pkg.cppget.org/1/alpha
 #trust: ...
 
 #:
