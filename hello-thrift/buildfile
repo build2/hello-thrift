@@ -28,7 +28,7 @@ cxx.poptions =+ "-I$out_root" "-I$src_root" "-I$out_base" "-I$src_base"
    o = $directory($>[0])             # Target output directory.
    s = $path($<[0])                  # Source file.
    t = $o/$name($>[0]).thrift_cxx.t  # Temp dir (based on group name).
-   d = $t/$name($<[0]).d             # Dep file (target list).
+   d = $t/$name($>[0]).d             # Dep file (target list).
 
    thrift_options = --nowarn --gen cpp:no_skeleton
 
